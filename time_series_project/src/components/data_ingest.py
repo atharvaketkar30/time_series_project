@@ -5,6 +5,7 @@ from src.exception import CustomException
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from dataclasses import dataclass
+from src.utils import remove_cols, get_dates
 
 #Paths to saving the data
 @dataclass
@@ -25,6 +26,16 @@ class DataIngestion:
             df = pd.read_csv('Sales_Transactions_Dataset_Weekly.csv')
             logging.info('Data read successfully')
 
+            #Removing columns
+            logging.info('Removing columns from the dataframe')
+            df = remove_cols(df)
+            df = df.drop(['Product_Code'], axis=1)
+            logging.info('Columns removed successfully')
+
+            df = df.transpose()
+            # Getting dates from the dataframe
+            df = get_dates(df)
+
             #Saving the data
             os.makedirs(os.path.dirname(self.ingestion_config.raw_data_path), exist_ok=True)
             df.to_csv(self.ingestion_config.raw_data_path, index=False, header=True)
@@ -32,14 +43,17 @@ class DataIngestion:
 
             #Splitting the data
             logging.info('Splitting data into train and test')
-            train, test = train_test_split(df, test_size=0.2, random_state=42)
+            split_point = int(len(df)*0.7)
+            train = df.iloc[:split_point, :]
+            test = df.iloc[split_point:, :]
             train.to_csv(self.ingestion_config.train_data_path, index=False, header=True)
             test.to_csv(self.ingestion_config.test_data_path, index=False, header=True)
             logging.info('Data split successfully')
 
             return (
                 self.ingestion_config.train_data_path, 
-                self.ingestion_config.test_data_path
+                self.ingestion_config.test_data_path,
+                self.ingestion_config.raw_data_path
                 )
         except Exception as e:
             raise CustomException(error_ms=e, detail=sys)
