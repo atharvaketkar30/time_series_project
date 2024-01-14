@@ -38,20 +38,30 @@ class CustomTransformer(BaseEstimator, TransformerMixin):
         logging.info('Dates extracted successfully. Now converting dataframe to dictionary')
         X_new_dict = convert_df_to_dict(X_new)
 
+        # print(X_new_dict['P_0'].head())
+
         logging.info('Dictionary created successfully. Now extracting features')
         lags = [1,2,3,4,5]
+        logging.info('Extracting lag features')
         for k,ts in X_new_dict.items():
             X_new_dict[k] = get_lagged_features(ts, lags=lags, target = k)
+        # print(X_new_dict['P_0'].head())
+        logging.info('Extracting rolling features')
         windows = list(range(1, 6))
         for k,ts in X_new_dict.items():
             X_new_dict[k] = get_rolling_features(ts, windows=windows, target = k)
+        # print(X_new_dict['P_0'].head())
+        logging.info('Extracting ewm features')
         alphas = [0.9, 0.95, 0.5]
         for k,ts in X_new_dict.items():
             X_new_dict[k] = get_ewm_features(ts, alphas=alphas, lags=lags, target = k)
-
+        
+        # print(X_new_dict['P_0'].head())
         logging.info('Features extracted successfully. Now converting dictionary to dataframe')
-        for k,ts in X_new.items():
+        for k,ts in X_new_dict.items():
             X_new_dict[k] = add_product_num_column(ts, k)
+        
+        
         X_final = convert_dict_to_df(X_new_dict)
         
         return X_final
